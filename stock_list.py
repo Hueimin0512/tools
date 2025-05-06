@@ -100,11 +100,6 @@ st.header("📋 当前记录")
 
 # ➡️ 表格展示
 if not st.session_state.df.empty:
-    # 自动刷新删除效果
-    if st.session_state.get("deleted"):
-        st.session_state["deleted"] = False
-        st.experimental_rerun()
-
     st.markdown(st.session_state.df.to_html(index=False), unsafe_allow_html=True)
 
     # ➡️ 删除功能
@@ -114,7 +109,7 @@ if not st.session_state.df.empty:
         st.session_state.df["ITEM"] = st.session_state.df.index + 1
         st.session_state.df.to_csv(DATA_FILE, index=False)
         st.success(f"已删除第 {delete_index} 行！")
-        st.session_state["deleted"] = True  # 刷新标记
+        st.experimental_rerun()  # 删除后刷新界面
 
 # ➡️ 导出 Excel
 def to_excel(df):
