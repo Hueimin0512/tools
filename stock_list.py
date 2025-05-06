@@ -109,7 +109,8 @@ if not st.session_state.df.empty:
         st.session_state.df["ITEM"] = st.session_state.df.index + 1
         st.session_state.df.to_csv(DATA_FILE, index=False)
         st.success(f"已删除第 {delete_index} 行！")
-        st.experimental_rerun()  # 删除后刷新界面
+        # 删除后重新载入数据，确保刷新
+        st.session_state.df = pd.read_csv(DATA_FILE)
 
 # ➡️ 导出 Excel
 def to_excel(df):
