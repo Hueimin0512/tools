@@ -2,18 +2,20 @@
 import pandas as pd
 import streamlit as st
 import xlsxwriter
-import os
 import io
+import os
 
 st.write(f"✅ pandas 版本：{pd.__version__}")
 st.write(f"✅ streamlit 版本：{st.__version__}")
 st.write(f"✅ xlsxwriter 版本：{xlsxwriter.__version__}")
 st.title("📦 点货记录小工具")
 
+# 保存数据的CSV文件
 DATA_FILE = "data.csv"
 
 st.markdown("请在下面输入您的点货数据：")
 
+# 可选择的 DESCRIPTION 列表
 description_options = [
     "5911","5912-2","5912-2TSK","5912-3","5912-3 TSK",
     "5912-4","5912-6","5913-3","5913-3TSK","5913-4",
@@ -40,11 +42,12 @@ description_options = [
     "CAT2023-F","CAT1023-F","CAT0723-M","CAT1023-M","CAT2023-M","CAT2023-MC",
 ]
 
+# 初始化空数据表
 if "df" not in st.session_state:
     if os.path.exists(DATA_FILE):
         st.session_state.df = pd.read_csv(DATA_FILE)
     else:
-        st.session_state.df = pd.DataFrame(columns=[ 
+        st.session_state.df = pd.DataFrame(columns=[
             "ITEM", "DESCRIPTION", "STANDARD WEIGHT PER BAG",
             "NO OF BAG PER PALLET", "QUANTITY NO OF PELLET",
             "QUANTITY NO OF BAG ITEM", "TOTAL", "TOTAL WEIGHT", "remark"
@@ -95,17 +98,25 @@ if st.button("添加记录"):
 
 st.header("📋 当前记录")
 
+# ➡️ 表格展示
 if not st.session_state.df.empty:
+    # 自动刷新删除效果
+    if st.session_state.get("deleted"):
+        st.session_state["deleted"] = False
+        st.experimental_rerun()
+
     st.markdown(st.session_state.df.to_html(index=False), unsafe_allow_html=True)
 
+    # ➡️ 删除功能
     delete_index = st.number_input("输入要删除的行号 (ITEM)", min_value=1, max_value=int(st.session_state.df["ITEM"].max()), step=1)
     if st.button("删除这行"):
         st.session_state.df = st.session_state.df[st.session_state.df["ITEM"] != delete_index].reset_index(drop=True)
         st.session_state.df["ITEM"] = st.session_state.df.index + 1
         st.session_state.df.to_csv(DATA_FILE, index=False)
         st.success(f"已删除第 {delete_index} 行！")
-        st.experimental_rerun()
+        st.session_state["deleted"] = True  # 刷新标记
 
+# ➡️ 导出 Excel
 def to_excel(df):
     if df.empty:
         df = pd.DataFrame({"提示": ["当前没有记录"]})
@@ -116,11 +127,16 @@ def to_excel(df):
     output.seek(0)
     return output.getvalue()
 
+# 确保 df 是有效的
 df = st.session_state.get('df', pd.DataFrame())
+
+# 打印 DataFrame，确保数据正确
 st.write("✅ 当前的 DataFrame：", df)
 
+# 生成 Excel 数据
 excel_data = to_excel(df)
 
+# ✅ 下载按钮
 st.download_button(
     label="下载为Excel",
     data=excel_data,
